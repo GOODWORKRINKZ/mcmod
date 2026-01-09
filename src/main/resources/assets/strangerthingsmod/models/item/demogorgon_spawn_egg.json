@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "strangerthingsmod:item/demogorgon_spawn_egg"
+  }
+}

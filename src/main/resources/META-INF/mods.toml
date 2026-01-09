@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="strangerthingsmod"
+version="1.0.0"
+displayName="Stranger Things Mod"
+description='''
+Добавляет Демогоргана и измерение Изнанка из сериала Очень Странные Дела.
+'''
+logoFile="logo.png"
+credits="Created for Minecraft"
+authors="Modder"
+
+[[dependencies.strangerthingsmod]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.strangerthingsmod]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
