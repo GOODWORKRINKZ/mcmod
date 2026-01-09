@@ -2,15 +2,21 @@ package com.strangerthings.mod.entity;
 
 import com.strangerthings.mod.StrangerThingsMod;
 import com.strangerthings.mod.block.ModBlocks;
+import com.strangerthings.mod.effect.ModEffects;
 import com.strangerthings.mod.world.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
@@ -19,14 +25,21 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class DemogorgonEntity extends Monster {
+    
+    // Инвентарь демогоргана (27 слотов как в сундуке)
+    private SimpleContainer inventory = new SimpleContainer(27);
     
     // Кастомные правила спавна - ОЧЕНЬ мягкие, демогорганы появляются почти всегда
     public static boolean canDemogorgonSpawn(EntityType<DemogorgonEntity> entityType, 
@@ -71,11 +84,13 @@ public class DemogorgonEntity extends Monster {
         this.goalSelector.addGoal(1, new OpenPortalGoal(this));
         // В обычном мире - преследует и толкает к порталу
         this.goalSelector.addGoal(2, new PushToPortalGoal(this, 1.3D));
-        // Атакует только в Изнанке!
+        // Атакует в зависимости от измерения
         this.goalSelector.addGoal(3, new DimensionAwareMeleeGoal(this, 1.2D, false));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        // Подбирает драгоценности и предметы
+        this.goalSelector.addGoal(4, new PickupValuablesGoal(this, 1.0D));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -235,7 +250,7 @@ public class DemogorgonEntity extends Monster {
         }
     }
 
-    // Класс для атаки только в Изнанке
+    // Класс для атаки - в Изнанке атакует всех кроме демогорганов, в обычном мире только преследует
     static class DimensionAwareMeleeGoal extends MeleeAttackGoal {
         private final DemogorgonEntity demogorgon;
 
@@ -246,11 +261,216 @@ public class DemogorgonEntity extends Monster {
 
         @Override
         public boolean canUse() {
-            // Атакует только в Изнанке
+            // В обычном мире не атакует (только толкает к порталу)
             if (!this.demogorgon.level().dimension().equals(ModDimensions.UPSIDE_DOWN_LEVEL)) {
                 return false;
             }
+            
+            // В Изнанке атакует всех кроме демогорганов
+            LivingEntity target = this.demogorgon.getTarget();
+            if (target instanceof DemogorgonEntity) {
+                return false; // Не атакует других демогорганов
+            }
+            
             return super.canUse();
+        }
+        
+        @Override
+        protected void checkAndPerformAttack(LivingEntity target, double distanceToSqr) {
+            double reach = this.getAttackReachSqr(target);
+            if (distanceToSqr <= reach && this.isTimeToAttack()) {
+                this.resetAttackCooldown();
+                this.mob.doHurtTarget(target);
+                
+                // Если цель умерла - подбираем добычу
+                if (!target.isAlive()) {
+                    this.demogorgon.onKillEntity(target);
+                }
+            }
+        }
+    }
+    
+    // ========== СИСТЕМА ИНВЕНТАРЯ ==========
+    
+    // Обработка убийства существа - вызывается из DimensionAwareMeleeGoal
+    public void onKillEntity(LivingEntity killed) {
+        // Подбираем еду для восстановления здоровья
+        pickupFoodFromKilled(killed);
+    }
+    
+    // Подбор еды с убитого существа
+    private void pickupFoodFromKilled(LivingEntity killed) {
+        // Определяем что дропает убитое существо
+        ItemStack food = null;
+        
+        if (killed instanceof net.minecraft.world.entity.animal.Cow) {
+            food = new ItemStack(Items.BEEF, 1 + this.random.nextInt(2));
+        } else if (killed instanceof net.minecraft.world.entity.animal.Pig) {
+            food = new ItemStack(Items.PORKCHOP, 1 + this.random.nextInt(2));
+        } else if (killed instanceof net.minecraft.world.entity.animal.Chicken) {
+            food = new ItemStack(Items.CHICKEN, 1 + this.random.nextInt(2));
+        } else if (killed instanceof net.minecraft.world.entity.animal.Sheep) {
+            food = new ItemStack(Items.MUTTON, 1 + this.random.nextInt(2));
+        } else if (killed instanceof net.minecraft.world.entity.animal.Rabbit) {
+            food = new ItemStack(Items.RABBIT, 1 + this.random.nextInt(2));
+        } else if (killed instanceof net.minecraft.world.entity.monster.Zombie) {
+            food = new ItemStack(Items.ROTTEN_FLESH, 1 + this.random.nextInt(3));
+        }
+        
+        if (food != null) {
+            // Восстанавливаем здоровье (2 HP за единицу еды)
+            this.heal(food.getCount() * 2.0F);
+            
+            // Складываем в инвентарь
+            addToInventory(food);
+            
+            this.playSound(SoundEvents.GENERIC_EAT, 1.0F, 1.0F);
+        }
+    }
+    
+    // Добавить предмет в инвентарь
+    public boolean addToInventory(ItemStack stack) {
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack slot = inventory.getItem(i);
+            if (slot.isEmpty()) {
+                inventory.setItem(i, stack.copy());
+                return true;
+            } else if (ItemStack.isSameItemSameTags(slot, stack)) {
+                int space = slot.getMaxStackSize() - slot.getCount();
+                if (space > 0) {
+                    int amount = Math.min(space, stack.getCount());
+                    slot.grow(amount);
+                    if (stack.getCount() <= amount) {
+                        return true;
+                    }
+                    stack.shrink(amount);
+                }
+            }
+        }
+        return false;
+    }
+    
+    // Проверка - является ли предмет драгоценным
+    public static boolean isValuable(ItemStack stack) {
+        return stack.is(Items.DIAMOND) || 
+               stack.is(Items.EMERALD) || 
+               stack.is(Items.GOLD_INGOT) || 
+               stack.is(Items.IRON_INGOT) ||
+               stack.is(Items.NETHERITE_INGOT) ||
+               stack.is(Items.NETHERITE_SCRAP) ||
+               stack.is(Items.ANCIENT_DEBRIS) ||
+               stack.is(Items.AMETHYST_SHARD) ||
+               stack.is(Items.ECHO_SHARD) ||
+               stack.is(ItemTags.MUSIC_DISCS);
+    }
+    
+    // Дроп инвентаря при смерти
+    @Override
+    protected void dropFromLootTable(DamageSource damageSource, boolean recentlyHit) {
+        super.dropFromLootTable(damageSource, recentlyHit);
+        
+        // Дропаем содержимое инвентаря
+        if (this.level() instanceof ServerLevel level) {
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                ItemStack stack = inventory.getItem(i);
+                if (!stack.isEmpty()) {
+                    ItemEntity itemEntity = new ItemEntity(level, this.getX(), this.getY(), this.getZ(), stack.copy());
+                    level.addFreshEntity(itemEntity);
+                }
+            }
+        }
+    }
+    
+    // Сохранение инвентаря
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        
+        CompoundTag inventoryTag = new CompoundTag();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (!stack.isEmpty()) {
+                CompoundTag itemTag = new CompoundTag();
+                stack.save(itemTag);
+                inventoryTag.put("Slot" + i, itemTag);
+            }
+        }
+        tag.put("Inventory", inventoryTag);
+    }
+    
+    // Загрузка инвентаря
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        
+        if (tag.contains("Inventory")) {
+            CompoundTag inventoryTag = tag.getCompound("Inventory");
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                if (inventoryTag.contains("Slot" + i)) {
+                    ItemStack stack = ItemStack.of(inventoryTag.getCompound("Slot" + i));
+                    inventory.setItem(i, stack);
+                }
+            }
+        }
+    }
+    
+    // ========== AI ДЛЯ ПОДБОРА ДРАГОЦЕННОСТЕЙ ==========
+    
+    static class PickupValuablesGoal extends Goal {
+        private final DemogorgonEntity demogorgon;
+        private final double speedModifier;
+        private ItemEntity targetItem;
+        
+        public PickupValuablesGoal(DemogorgonEntity demogorgon, double speedModifier) {
+            this.demogorgon = demogorgon;
+            this.speedModifier = speedModifier;
+        }
+        
+        @Override
+        public boolean canUse() {
+            // Не подбирает во время боя
+            if (this.demogorgon.getTarget() != null) {
+                return false;
+            }
+            
+            // Ищем драгоценности в радиусе 10 блоков
+            AABB searchBox = this.demogorgon.getBoundingBox().inflate(10.0D);
+            for (ItemEntity item : this.demogorgon.level().getEntitiesOfClass(ItemEntity.class, searchBox)) {
+                if (isValuable(item.getItem())) {
+                    this.targetItem = item;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        @Override
+        public boolean canContinueToUse() {
+            return this.targetItem != null && this.targetItem.isAlive() && 
+                   isValuable(this.targetItem.getItem());
+        }
+        
+        @Override
+        public void tick() {
+            if (this.targetItem != null) {
+                // Идем к предмету
+                this.demogorgon.getNavigation().moveTo(this.targetItem, this.speedModifier);
+                
+                // Если рядом - подбираем
+                if (this.demogorgon.distanceToSqr(this.targetItem) < 2.0D) {
+                    ItemStack stack = this.targetItem.getItem();
+                    if (this.demogorgon.addToInventory(stack)) {
+                        this.targetItem.discard();
+                        this.demogorgon.playSound(SoundEvents.ITEM_PICKUP, 1.0F, 1.0F);
+                    }
+                    this.targetItem = null;
+                }
+            }
+        }
+        
+        @Override
+        public void stop() {
+            this.targetItem = null;
         }
     }
 
