@@ -7,8 +7,10 @@ import com.strangerthings.mod.world.dimension.ModDimensions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -98,6 +100,24 @@ public class ClientEvents {
                 event.setGreen(0.03f);
                 event.setBlue(0.03f);
             }
+        }
+    }
+    
+    // Скрываем существ из другого "мира" (параллельные миры в одном пространстве)
+    @SubscribeEvent
+    public static void onRenderLiving(RenderLivingEvent.Pre<?, ?> event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        
+        LivingEntity entity = event.getEntity();
+        
+        // Проверяем: игрок и существо в разных "мирах"?
+        boolean playerInUpsideDown = mc.player.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
+        boolean entityInUpsideDown = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
+        
+        // Если они в разных мирах - не рендерим существо
+        if (playerInUpsideDown != entityInUpsideDown) {
+            event.setCanceled(true);
         }
     }
 }

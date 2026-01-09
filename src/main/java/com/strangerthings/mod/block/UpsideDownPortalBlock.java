@@ -50,7 +50,10 @@ public class UpsideDownPortalBlock extends Block {
                 }
             }
             
-            // Проверяем есть ли уже эффект
+            // Обновляем время последнего использования
+            portalCooldown.put(entityId, currentTime);
+            
+            // Переключаем эффект изнанки ДЛЯ ВСЕХ существ (не только игроков)
             boolean hasEffect = livingEntity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
             
             if (hasEffect) {
@@ -70,7 +73,6 @@ public class UpsideDownPortalBlock extends Block {
                             (level.random.nextDouble() - 0.5) * 2.0, 0.1);
                     }
                 }
-                portalCooldown.put(entityId, currentTime);
             } else {
                 // Даем эффект - попадаем в Изнанку
                 livingEntity.addEffect(new MobEffectInstance(
@@ -95,7 +97,6 @@ public class UpsideDownPortalBlock extends Block {
                             (level.random.nextDouble() - 0.5) * 2.0, 0.1);
                     }
                 }
-                portalCooldown.put(entityId, currentTime);
             }
         }
     }
