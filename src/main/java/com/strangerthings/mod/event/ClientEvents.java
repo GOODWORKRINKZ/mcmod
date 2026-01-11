@@ -112,21 +112,24 @@ public class ClientEvents {
         
         LivingEntity entity = event.getEntity();
         
-        // Проверяем: игрок и существо в разных "мирах"?
+        // Проверяем: в разных ли "измерениях" игрок и существо?
         boolean playerInUpsideDown = mc.player.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
         boolean entityInUpsideDown = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
         
-        String entityName = entity.getName().getString();
-        if (entityName.contains("Demogorgon") || entityName.contains("Cow") || entityName.contains("Horse")) {
-            //StrangerThingsMod.LOGGER.info("[RENDER] Player in Upside Down: {} | {} in Upside Down: {}", playerInUpsideDown, entityName, entityInUpsideDown);
+        // ЕСЛИ ОБА В ИЗНАНКЕ - ВСЕГДА ПОКАЗЫВАЕМ
+        if (playerInUpsideDown && entityInUpsideDown) {
+            return; // Оба в изнанке - видим друг друга
         }
         
-        // Если они в разных мирах - не рендерим существо
+        // ЕСЛИ ОБА НА ОБЫЧНОЙ СТОРОНЕ - ВСЕГДА ПОКАЗЫВАЕМ
+        if (!playerInUpsideDown && !entityInUpsideDown) {
+            return; // Оба на обычной стороне - видим друг друга
+        }
+        
+        // ЕСЛИ В РАЗНЫХ ИЗМЕРЕНИЯХ - ВСЕГДА СКРЫВАЕМ
         if (playerInUpsideDown != entityInUpsideDown) {
-            if (entityName.contains("Demogorgon") || entityName.contains("Cow") || entityName.contains("Horse")) {
-                //StrangerThingsMod.LOGGER.info("[RENDER] HIDING {}", entityName);
-            }
             event.setCanceled(true);
+            return;
         }
     }
 }

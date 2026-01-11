@@ -5,6 +5,7 @@ import com.strangerthings.mod.entity.ModEntities;
 import com.strangerthings.mod.world.dimension.ModDimensions;
 import com.strangerthings.mod.block.ModBlocks;
 import com.strangerthings.mod.item.ModItems;
+import com.strangerthings.mod.network.PacketHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -26,6 +27,9 @@ public class StrangerThingsMod {
         ModEntities.register(modEventBus);
         ModEffects.register(modEventBus);
         ModDimensions.register();
+        
+        // Регистрируем пакеты для сетевой синхронизации
+        PacketHandler.register();
 
         MinecraftForge.EVENT_BUS.register(this);
         
