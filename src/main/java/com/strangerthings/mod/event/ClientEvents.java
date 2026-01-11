@@ -81,7 +81,7 @@ public class ClientEvents {
             
             if (inUpsideDown) {
                 event.setNearPlaneDistance(5.0f);
-                event.setFarPlaneDistance(60.0f);
+                event.setFarPlaneDistance(40.0f); // Ближе туман для темноты
                 event.setCanceled(true);
             }
         }
@@ -95,10 +95,11 @@ public class ClientEvents {
                                   (mc.level != null && mc.level.dimension() == ModDimensions.UPSIDE_DOWN_LEVEL);
             
             if (inUpsideDown) {
-                // Красный туман (как в Незере)
-                event.setRed(0.2f);
-                event.setGreen(0.03f);
-                event.setBlue(0.03f);
+                // ЗАТЕМНЯЕМ ВСЕ БЛОКИ - уменьшаем яркость в 5 раз и добавляем красноватый оттенок
+                float darkening = 0.15f; // Очень темно (85% затемнение)
+                event.setRed(event.getRed() * darkening + 0.15f);   // Добавляем красный
+                event.setGreen(event.getGreen() * darkening);        // Убираем зеленый
+                event.setBlue(event.getBlue() * darkening);          // Убираем синий
             }
         }
     }
@@ -115,8 +116,16 @@ public class ClientEvents {
         boolean playerInUpsideDown = mc.player.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
         boolean entityInUpsideDown = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
         
+        String entityName = entity.getName().getString();
+        if (entityName.contains("Demogorgon") || entityName.contains("Cow") || entityName.contains("Horse")) {
+            //StrangerThingsMod.LOGGER.info("[RENDER] Player in Upside Down: {} | {} in Upside Down: {}", playerInUpsideDown, entityName, entityInUpsideDown);
+        }
+        
         // Если они в разных мирах - не рендерим существо
         if (playerInUpsideDown != entityInUpsideDown) {
+            if (entityName.contains("Demogorgon") || entityName.contains("Cow") || entityName.contains("Horse")) {
+                //StrangerThingsMod.LOGGER.info("[RENDER] HIDING {}", entityName);
+            }
             event.setCanceled(true);
         }
     }

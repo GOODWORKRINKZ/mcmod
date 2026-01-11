@@ -21,7 +21,8 @@ public class ModBlocks {
                     .noLootTable()
                     .noOcclusion()
                     .lightLevel((state) -> 5)
-                    .sound(SoundType.GLASS))); // Постоянный портал из структуры
+                    .sound(SoundType.GLASS)
+                    .randomTicks())); // Добавили randomTicks() для активного затягивания
     
     public static final RegistryObject<Block> TEMPORARY_PORTAL = BLOCKS.register("temporary_portal",
             () -> new TemporaryPortalBlock(BlockBehaviour.Properties.of()
