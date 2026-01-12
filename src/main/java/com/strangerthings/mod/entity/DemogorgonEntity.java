@@ -3,6 +3,7 @@ package com.strangerthings.mod.entity;
 import com.strangerthings.mod.StrangerThingsMod;
 import com.strangerthings.mod.block.ModBlocks;
 import com.strangerthings.mod.effect.ModEffects;
+import com.strangerthings.mod.sound.ModSounds;
 import com.strangerthings.mod.world.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -10,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.RandomSource;
@@ -201,6 +203,38 @@ public class DemogorgonEntity extends Monster {
             }
         }
         return null;
+    }
+
+    // ========== ЗВУКИ ==========
+    
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return ModSounds.DEMOGORGON_AMBIENT.get();
+    }
+    
+    @Override
+    protected SoundEvent getHurtSound(DamageSource damageSource) {
+        return ModSounds.DEMOGORGON_HURT.get();
+    }
+    
+    @Override
+    protected SoundEvent getDeathSound() {
+        return ModSounds.DEMOGORGON_DEATH.get();
+    }
+    
+    @Override
+    protected float getSoundVolume() {
+        return 1.0F;
+    }
+    
+    // Издает крик при атаке
+    @Override
+    public boolean doHurtTarget(net.minecraft.world.entity.Entity target) {
+        boolean result = super.doHurtTarget(target);
+        if (result && this.random.nextInt(3) == 0) {
+            this.playSound(ModSounds.DEMOGORGON_SCREAM.get(), 1.5F, 1.0F);
+        }
+        return result;
     }
 
     // Класс для преследования и толкания к порталу в обычном мире

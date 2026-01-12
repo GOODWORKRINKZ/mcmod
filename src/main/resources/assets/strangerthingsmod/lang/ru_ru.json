@@ -3,5 +3,9 @@
   "item.strangerthingsmod.demogorgon_slayer": "Убийца Демогорганов",
   "entity.strangerthingsmod.demogorgon": "Демогоргон",
   "block.strangerthingsmod.upside_down_portal": "Портал в Изнанку",
-  "biome.strangerthingsmod.upside_down_biome": "Изнанка"
+  "biome.strangerthingsmod.upside_down_biome": "Изнанка",
+  "strangerthingsmod.subtitle.demogorgon.ambient": "Демогоргон рычит",
+  "strangerthingsmod.subtitle.demogorgon.scream": "Демогоргон кричит",
+  "strangerthingsmod.subtitle.demogorgon.hurt": "Демогоргон ранен",
+  "strangerthingsmod.subtitle.demogorgon.death": "Демогоргон умирает"
 }

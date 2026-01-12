@@ -3,5 +3,9 @@
   "item.strangerthingsmod.demogorgon_slayer": "Demogorgon Slayer",
   "entity.strangerthingsmod.demogorgon": "Demogorgon",
   "block.strangerthingsmod.upside_down_portal": "Upside Down Portal",
-  "biome.strangerthingsmod.upside_down_biome": "The Upside Down"
+  "biome.strangerthingsmod.upside_down_biome": "The Upside Down",
+  "strangerthingsmod.subtitle.demogorgon.ambient": "Demogorgon growls",
+  "strangerthingsmod.subtitle.demogorgon.scream": "Demogorgon screams",
+  "strangerthingsmod.subtitle.demogorgon.hurt": "Demogorgon hurts",
+  "strangerthingsmod.subtitle.demogorgon.death": "Demogorgon dies"
 }

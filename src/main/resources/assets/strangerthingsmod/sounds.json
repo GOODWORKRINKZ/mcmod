@@ -1,0 +1,41 @@
+{
+  "entity.demogorgon.ambient": {
+    "subtitle": "strangerthingsmod.subtitle.demogorgon.ambient",
+    "sounds": [
+      {
+        "name": "strangerthingsmod:demogorgon_ambient",
+        "stream": false
+      }
+    ]
+  },
+  "entity.demogorgon.scream": {
+    "subtitle": "strangerthingsmod.subtitle.demogorgon.scream",
+    "sounds": [
+      {
+        "name": "strangerthingsmod:demogorgon_scream",
+        "stream": false
+      }
+    ]
+  },
+  "entity.demogorgon.hurt": {
+    "subtitle": "strangerthingsmod.subtitle.demogorgon.hurt",
+    "sounds": [
+      {
+        "name": "strangerthingsmod:demogorgon_scream",
+        "stream": false,
+        "volume": 0.8
+      }
+    ]
+  },
+  "entity.demogorgon.death": {
+    "subtitle": "strangerthingsmod.subtitle.demogorgon.death",
+    "sounds": [
+      {
+        "name": "strangerthingsmod:demogorgon_scream",
+        "stream": false,
+        "volume": 1.2,
+        "pitch": 0.8
+      }
+    ]
+  }
+}
