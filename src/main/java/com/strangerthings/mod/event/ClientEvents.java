@@ -1,11 +1,9 @@
 package com.strangerthings.mod.event;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.strangerthings.mod.StrangerThingsMod;
 import com.strangerthings.mod.effect.ModEffects;
 import com.strangerthings.mod.world.dimension.ModDimensions;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -15,7 +13,6 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Vector3f;
 
 @Mod.EventBusSubscriber(modid = StrangerThingsMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientEvents {
@@ -108,13 +105,18 @@ public class ClientEvents {
     @SubscribeEvent
     public static void onRenderLiving(RenderLivingEvent.Pre<?, ?> event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null || mc.level == null) return;
         
         LivingEntity entity = event.getEntity();
         
-        // Проверяем: в разных ли "измерениях" игрок и существо?
-        boolean playerInUpsideDown = mc.player.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
-        boolean entityInUpsideDown = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
+        // ВАЖНО: Проверяем РЕАЛЬНОЕ ИЗМЕРЕНИЕ игрока и сущности, а не только эффекты!
+        // Игрок считается в Изнанке если у него есть эффект ИЛИ он в измерении Изнанки
+        boolean playerInUpsideDown = mc.player.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get()) ||
+                                      mc.level.dimension() == ModDimensions.UPSIDE_DOWN_LEVEL;
+        
+        // Сущность считается в Изнанке если у неё есть эффект ИЛИ она в измерении Изнанки
+        boolean entityInUpsideDown = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get()) ||
+                                      entity.level().dimension() == ModDimensions.UPSIDE_DOWN_LEVEL;
         
         // ЕСЛИ ОБА В ИЗНАНКЕ - ВСЕГДА ПОКАЗЫВАЕМ
         if (playerInUpsideDown && entityInUpsideDown) {

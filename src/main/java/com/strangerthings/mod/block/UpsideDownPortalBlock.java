@@ -88,8 +88,6 @@ public class UpsideDownPortalBlock extends Block {
             long currentTime = level.getGameTime();
             
             // ВАЖНО: Логика зависит от того, где находится портал!
-            boolean entityHasEffect = entity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
-            
             if (portalInUpsideDown) {
                 // Портал в ИЗНАНКЕ - вытягиваем ТОЛЬКО игрока и демогоргона (они хотят выйти)
                 boolean isPlayer = entity instanceof net.minecraft.world.entity.player.Player;
@@ -168,13 +166,7 @@ public class UpsideDownPortalBlock extends Block {
                 }
             }
             
-            // НЕ трогаем сущностей которые уже имеют эффект!
-            boolean hasEffect = livingEntity.hasEffect(ModEffects.UPSIDE_DOWN_EFFECT.get());
-            if (hasEffect) {
-                // Сущность с эффектом - уже была телепортирована
-                // НИЧЕГО НЕ ДЕЛАЕМ - просто игнорируем
-                return;
-            }
+            // Просто телепортируем - кулдаун предотвратит зацикливание
             teleportEntity(level, pos, livingEntity);
         }
     }
