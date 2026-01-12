@@ -108,26 +108,14 @@ public class UpsideDownPortalBlock extends Block {
                 // Портал в ОБЫЧНОМ МИРЕ
                 boolean isPlayer = entity instanceof net.minecraft.world.entity.player.Player;
                 boolean isDemogorgon = entity.getClass().getSimpleName().equals("DemogorgonEntity");
-                boolean isSpecialEntity = isPlayer || isDemogorgon;
                 
-                if (isSpecialEntity) {
-                    // Игрок или демогоргон - вытягиваем ТОЛЬКО если у них ЕСТЬ эффект (они в Upside Down!)
-                    if (!entityHasEffect) {
-                        LOGGER.info("[PULL] {} is player/demo without effect - already in Overworld, skipping", entityName);
-                        continue;
-                    }
-                    // Вытягиваем - это выход из Upside Down
-                    LOGGER.info("[PULL] {} WILL BE PULLED OUT of Upside Down (player/demo with effect)", entityName);
-                } else {
-                    // Обычное животное - вытягиваем ТОЛЬКО если БЕЗ эффекта
-                    if (entityHasEffect) {
-                        // НЕ притягиваем животных с эффектом (они в Upside Down!)
-                        LOGGER.info("[PULL] {} has effect - already in Upside Down, skipping", entityName);
-                        continue;
-                    }
-                    // Вытягиваем животное в Upside Down
-                    LOGGER.info("[PULL] {} WILL BE PULLED IN (animal without effect)", entityName);
+                if (isPlayer || isDemogorgon) {
+                    // Игроки и демогоргоны НЕ притягиваются - они входят сами
+                    LOGGER.info("[PULL] {} is player/demo - not pulling in Overworld (enters manually)", entityName);
+                    continue;
                 }
+                // Притягиваем только животных в Overworld
+                LOGGER.info("[PULL] {} WILL BE PULLED IN (animal in Overworld)", entityName);
             }
             
             // КУЛДАУН РАБОТАЕТ ДЛЯ ВСЕХ БЕЗ ИСКЛЮЧЕНИЙ - это предотвращает зацикливание
