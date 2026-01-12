@@ -412,6 +412,24 @@ public class DemogorgonEntity extends Monster {
                     level.addFreshEntity(itemEntity);
                 }
             }
+            
+            // Специальный дроп при убийстве игроком: бедрок или незерит
+            if (damageSource.getEntity() instanceof Player) {
+                ItemStack specialDrop;
+                // 50% шанс на бедрок, 50% шанс на незеритовый слиток
+                if (this.random.nextBoolean()) {
+                    specialDrop = new ItemStack(Items.BEDROCK, 1);
+                } else {
+                    specialDrop = new ItemStack(Items.NETHERITE_INGOT, 1 + this.random.nextInt(2)); // 1-2 слитка
+                }
+                
+                ItemEntity specialItem = new ItemEntity(level, this.getX(), this.getY() + 0.5, this.getZ(), specialDrop);
+                specialItem.setDefaultPickUpDelay();
+                level.addFreshEntity(specialItem);
+                
+                // Особый звук для редкого дропа
+                this.playSound(SoundEvents.PLAYER_LEVELUP, 1.0F, 1.0F);
+            }
         }
     }
     
